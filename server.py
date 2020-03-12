@@ -16,6 +16,7 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)   #设置一个随机24位字符串为加密盐
+app.config.update(TEMPLATE_AUTO_RELOAD=True)
 
 # 装饰器装饰多个视图函数
 def wrapper(func):
@@ -30,9 +31,8 @@ def wrapper(func):
     return inner
 
 @app.route('/')
-def index():
-    return render_template('login.html')
-
+def a():
+    return redirect("/login")
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -54,15 +54,21 @@ def login():
     if(r[0].Upassword == str(request.form['password'])):
         if(admin==1):
             if(r[0].Uper==0):
-                session["user"] = request.form.get("username")
-                return render_template('admin.html', user=request.form)
+                session["user"] = request.form
+                return redirect('/index')
+                #return render_template('admin.html', user=request.form)
             else:
                 return "无管理员权限"
-        session["user"] = request.form.get("username")
-        return render_template('roomsearch.html', user=request.form)
+        session["user"] = request.form
+        return redirect("/roomsearch")
     else:
         return "密码错误"
 
+@app.route('/index',methods=['GET'])
+@wrapper
+def index():
+    print(session["user"])
+    return render_template('admin.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -80,9 +86,11 @@ def signup():
     return render_template('login.html')
 
 
-@app.route('/roomsearch', methods=['POST'])
+@app.route('/roomsearch', methods=['GET','POST'])
 @wrapper
 def roomsearch():
+    if request.method == "GET":
+        return render_template('roomsearch.html',user=session['user'])
     s = sql.Sql()
     print(request.form['startdate'])
     print(request.form['enddate'])
@@ -132,6 +140,7 @@ def roomsearch():
         d['username']=username
         roomlist.append(d)
     print(roomlist)
+    #return jsonify(roomlist)
     return render_template('roomlist.html',indexs=roomlist)
 
 
@@ -139,9 +148,6 @@ def roomsearch():
 @wrapper
 def roomlist():
     return render_template('roomlist.html')
-    print(request.form['startdate'])
-    print(request.form['enddate'])
-    return 'ok'
 
 @app.route('/orderlist', methods=['GET', 'POST'])
 @wrapper
@@ -203,11 +209,18 @@ def order():
     print(r)
 
     s.add('Checkin',userid,roomid,Cguestid,startdate,enddate,'')
-    return "预定成功"
+    return redirect("/roomsearch")
 
-@app.route('/admin/orderinfo', methods=['GET','POST'])
+@app.route('/getusername', methods=['POST'])
+@wrapper
+def getusername():
+    return session["user"]['username']
+
+@app.route('/orderinfo', methods=['GET','POST'])
 @wrapper
 def orderinfo():
+    if request.method=="GET":
+        return render_template('orderinfo_temp.html')
     s = sql.Sql()
     r=s.execute("SELECT * FROM Checkin")
     orderlist=list()
@@ -219,11 +232,14 @@ def orderinfo():
         d['startdate']=i.Cstartdate
         d['enddate']=i.Clastdate
         orderlist.append(d)
-    return  render_template('orderinfo.html',indexs=orderlist)
+    #return  render_template('orderinfo.html',indexs=orderlist)
+    return jsonify(orderlist)
 
-@app.route('/admin/guestinfo', methods=['GET','POST'])
+@app.route('/guestinfo', methods=['GET','POST'])
 @wrapper
 def guestinfo():
+    if request.method=="GET":
+        return render_template('guestinfo_temp.html')
     s = sql.Sql()
     r=s.execute("SELECT * FROM Guest")
     orderlist=list()
@@ -238,11 +254,14 @@ def guestinfo():
         d['food']=i.Gfood
         d['vip']=i.Gvip
         orderlist.append(d)
-    return  render_template('guestinfo.html',indexs=orderlist)
+    #return  render_template('guestinfo.html',indexs=orderlist)
+    return jsonify(orderlist)
     
-@app.route('/admin/roominfo', methods=['GET','POST'])
+@app.route('/roominfo', methods=['GET','POST'])
 @wrapper
 def roominfo():
+    if request.method=="GET":
+        return render_template('roominfo_temp.html')
     s = sql.Sql()
     r=s.execute("SELECT * FROM ROOM")
     orderlist=list()
@@ -253,11 +272,31 @@ def roominfo():
         d['typename']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.Rtypeid)[0].Rtypename
         d['price']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.Rtypeid)[0].Rprice
         orderlist.append(d)
-    return  render_template('roominfo.html',indexs=orderlist)
+    #return  render_template('roominfo.html',indexs=orderlist)
+    return jsonify(orderlist)
 
-@app.route('/admin/userinfo', methods=['GET','POST'])
+@app.route('/roomtypeinfo', methods=['GET','POST'])
+@wrapper
+def roomtypeinfo():
+    if request.method=="GET":
+        return render_template('roomtypeinfo_temp.html')
+    s = sql.Sql()
+    r=s.execute("SELECT * FROM ROOMTYPE")
+    orderlist=list()
+    for i in r:
+        d=dict()
+        d['id']=i.id
+        d['typename']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.id)[0].Rtypename
+        d['price']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.id)[0].Rprice
+        orderlist.append(d)
+    #return  render_template('roominfo.html',indexs=orderlist)
+    return jsonify(orderlist)
+
+@app.route('/userinfo', methods=['GET','POST'])
 @wrapper
 def userinfo():
+    if request.method=="GET":
+        return render_template('userinfo_temp.html')
     s = sql.Sql()
     r=s.execute("SELECT * FROM Userlogin")
     orderlist=list()
@@ -268,7 +307,8 @@ def userinfo():
         d['password']=i.Upassword
         d['per']=i.Uper
         orderlist.append(d)
-    return  render_template('userinfo.html',indexs=orderlist)
+    #return  render_template('userinfo.html',indexs=orderlist)
+    return jsonify(orderlist)
 
 @app.route('/orderdel', methods=['POST'])
 @wrapper
@@ -277,16 +317,72 @@ def orderdel():
     for i in request.form:
         r=s.no_ret_execute("DELETE FROM Checkin WHERE id='%s'"%i)
         print(i)
-    return redirect('/admin/orderinfo')
+    return 'ok'
 
-@app.route('/userdel', methods=['POST'])
+@app.route('/useradd', methods=['GET','POST'])
 @wrapper
-def guestdel():
+def useradd():
+    if request.method=="GET":
+        return render_template('user-add.html')
+    username=request.form['username']
+    password=request.form['password']
+    per=request.form['per']
     s = sql.Sql()
-    for i in request.form:
-        r=s.no_ret_execute("DELETE FROM Userlogin WHERE id='%s'"%i)
-        print(i)
-    return redirect('/admin/userinfo')
+    s.add("Userlogin",username,password,per)
+    return '添加成功'
+
+@app.route('/roomadd', methods=['GET','POST'])
+@wrapper
+def roomadd():
+    if request.method=="GET":
+        return render_template('room-add.html')
+    roomnum=request.form['roomnum']
+    typeid=request.form['typeid']
+    s = sql.Sql()
+    s.add("Room",roomnum,typeid)
+    return '添加成功'
+
+@app.route('/getRoomtype', methods=['POST'])
+@wrapper
+def getRoomtype():
+    s = sql.Sql()
+    t=s.execute("SELECT * FROM Roomtype")
+    l=list()
+    for i in t:
+        d=dict()
+        d['id']=i[0]
+        d['name']=i[1]
+        l.append(d)
+    return jsonify(l)
+
+@app.route('/roomtypeadd', methods=['GET','POST'])
+@wrapper
+def roomtypeadd():
+    if request.method=="GET":
+        return render_template('roomtype-add.html')
+    typename=request.form['typename']
+    price=request.form['price']
+    s = sql.Sql()
+    s.add("Roomtype",typename,price)
+    return '添加成功'
+
+# @app.route('/userdel', methods=['POST'])
+# @wrapper
+# def guestdel():
+#     s = sql.Sql()
+#     for i in request.form:
+#         r=s.no_ret_execute("DELETE FROM Userlogin WHERE id='%s'"%i)
+#         print(i)
+#     return 'ok'
+
+# @app.route('/roomtypedel', methods=['POST'])
+# @wrapper
+# def roomtypedel():
+#     s = sql.Sql()
+#     for i in request.form:
+#         r=s.no_ret_execute("DELETE FROM Userlogin WHERE id='%s'"%i)
+#         print(i)
+#     return 'ok'
 
 
 # def test():
