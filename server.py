@@ -15,7 +15,7 @@ import os
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)   #设置一个随机24位字符串为加密盐
+app.config['SECRET_KEY'] = 'yangning'   #设置一个随机24位字符串为加密盐
 app.config.update(TEMPLATE_AUTO_RELOAD=True)
 
 # 装饰器装饰多个视图函数
@@ -50,10 +50,10 @@ def login():
                     request.form['username'])
     if(len(r)==0):
         return "用户名尚未注册"
-    print(r[0].Upassword)
-    if(r[0].Upassword == str(request.form['password'])):
+    print(r[0]['Upassword'])
+    if(r[0]['Upassword'] == str(request.form['password'])):
         if(admin==1):
-            if(r[0].Uper==0):
+            if(r[0]['Uper']==0):
                 session["user"] = request.form
                 return redirect('/index')
                 #return render_template('admin.html', user=request.form)
@@ -68,7 +68,8 @@ def login():
 @wrapper
 def index():
     print(session["user"])
-    return render_template('admin.html')
+    #return render_template('admin.html')
+    return redirect("/orderinfo")
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -82,7 +83,7 @@ def signup():
     if(len(r) != 0):
         return '用户名已存在'
     # "用户名尚未注册"
-    s.add('Userlogin', request.form['username'], request.form['password'], 1)
+    s.add('Userlogin',0, request.form['username'], request.form['password'], 1)
     return render_template('login.html')
 
 
@@ -107,7 +108,7 @@ def roomsearch():
                   (startdate, enddate, startdate, enddate))
     cant_l = list()
     for i in r:
-        cant_l.append(i.Croomnum)
+        cant_l.append(i['Croomnum'])
     print(cant_l)
     if(len(cant_l) !=0):
         # 选择能出租的客房
@@ -123,13 +124,13 @@ def roomsearch():
     print(n)
     roomlist = list()
     for r in n:
-        room_num=r.Rroomnum
-        roomid=r.id
-        r=s.execute("SELECT * FROM Roomtype WHERE id=%s"%r.Rtypeid)
+        room_num=r['Rroomnum']
+        roomid=r['id']
+        r=s.execute("SELECT * FROM Roomtype WHERE id=%s"%r['Rtypeid'])
         print(r)
         r=r[0]
-        type_str=r.Rtypename
-        price=r.Rprice
+        type_str=r['Rtypename']
+        price=r['Rprice']
         d=dict()
         d['id']=roomid
         d['roomnum']=room_num
@@ -158,11 +159,11 @@ def orderlist():
     orderlist=list()
     for i in r:
         d=dict()
-        d['id']=i.id
-        d['roomnum']=(s.execute("SELECT * FROM Room WHERE id='%s'"% i.Croomnum) )[0].Rroomnum
-        d['name']=(s.execute("SELECT * FROM Guest WHERE id='%s'"% i.Cguestid) )[0].Gname
-        d['startdate']=i.Cstartdate
-        d['enddate']=i.Clastdate
+        d['id']=i['id']
+        d['roomnum']=(s.execute("SELECT * FROM Room WHERE id='%s'"% i['Croomnum']) )[0]['Rroomnum']
+        d['name']=(s.execute("SELECT * FROM Guest WHERE id='%s'"% i['Cguestid']) )[0]['Gname']
+        d['startdate']=i['Cstartdate']
+        d['enddate']=i['Clastdate']
         orderlist.append(d)
     print(orderlist)
     return render_template('orderlist.html',indexs=orderlist)
@@ -197,18 +198,18 @@ def order():
     r=s.execute("SELECT * FROM Guest WHERE Gidcard='%s'"%Gidcard)
     print(r)
     if(len(r)==0):
-        s.add('Guest',Gname,Gsex,Gidcard,Gphone,'',1,1,1)
+        s.add('Guest',0,Gname,Gsex,Gidcard,Gphone,'',1,1,1)
     else:
-        Cguestid=r[0].id
+        Cguestid=r[0]['id']
     r=s.execute("SELECT * FROM Guest WHERE Gidcard='%s'"%Gidcard)
-    Cguestid=r[0].id                                                                #客户id
+    Cguestid=r[0]['id']                                                        #客户id
     print(r)
 
     r=s.execute("SELECT * FROM Userlogin WHERE Uusername='%s'"%username)
-    userid=r[0].id                                                                #userid
+    userid=r[0]['id']                                                                #userid
     print(r)
 
-    s.add('Checkin',userid,roomid,Cguestid,startdate,enddate,'')
+    s.add('Checkin',0,userid,roomid,Cguestid,startdate,enddate,'')
     return redirect("/roomsearch")
 
 @app.route('/getusername', methods=['POST'])
@@ -226,11 +227,11 @@ def orderinfo():
     orderlist=list()
     for i in r:
         d=dict()
-        d['id']=i.id
-        d['roomnum']=(s.execute("SELECT * FROM Room WHERE id='%s'"% i.Croomnum) )[0].Rroomnum
-        d['name']=(s.execute("SELECT * FROM Guest WHERE id='%s'"% i.Cguestid) )[0].Gname
-        d['startdate']=i.Cstartdate
-        d['enddate']=i.Clastdate
+        d['id']=i['id']
+        d['roomnum']=(s.execute("SELECT * FROM Room WHERE id='%s'"% i.Croomnum) )[0]['Rroomnum']
+        d['name']=(s.execute("SELECT * FROM Guest WHERE id='%s'"% i.Cguestid) )[0]['Gname']
+        d['startdate']=i['Cstartdate']
+        d['enddate']=i['Clastdate']
         orderlist.append(d)
     #return  render_template('orderinfo.html',indexs=orderlist)
     return jsonify(orderlist)
@@ -245,14 +246,14 @@ def guestinfo():
     orderlist=list()
     for i in r:
         d=dict()
-        d['id']=i.id
-        d['name']=i.Gname
-        d['sex']=i.Gsex
-        d['idcard']=i.Gidcard
-        d['phone']=i.Gphone
-        d['bodybuild']=i.Gbodybuilding
-        d['food']=i.Gfood
-        d['vip']=i.Gvip
+        d['id']=i['id']
+        d['name']=i['Gname']
+        d['sex']=i['Gsex']
+        d['idcard']=i['Gidcard']
+        d['phone']=i['Gphone']
+        d['bodybuild']=i['Gbodybuilding']
+        d['food']=i['Gfood']
+        d['vip']=i['Gvip']
         orderlist.append(d)
     #return  render_template('guestinfo.html',indexs=orderlist)
     return jsonify(orderlist)
@@ -267,10 +268,10 @@ def roominfo():
     orderlist=list()
     for i in r:
         d=dict()
-        d['id']=i.id
-        d['roomnum']=i.Rroomnum
-        d['typename']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.Rtypeid)[0].Rtypename
-        d['price']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.Rtypeid)[0].Rprice
+        d['id']=i['id']
+        d['roomnum']=i['Rroomnum']
+        d['typename']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i['Rtypeid'])[0]['Rtypename']
+        d['price']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i['Rtypeid'])[0]['Rprice']
         orderlist.append(d)
     #return  render_template('roominfo.html',indexs=orderlist)
     return jsonify(orderlist)
@@ -285,9 +286,9 @@ def roomtypeinfo():
     orderlist=list()
     for i in r:
         d=dict()
-        d['id']=i.id
-        d['typename']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.id)[0].Rtypename
-        d['price']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i.id)[0].Rprice
+        d['id']=i['id']
+        d['typename']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i['id'])[0]['Rtypename']
+        d['price']=s.execute("SELECT * FROM Roomtype WHERE id='%s'"%i['id'])[0]['Rprice']
         orderlist.append(d)
     #return  render_template('roominfo.html',indexs=orderlist)
     return jsonify(orderlist)
@@ -302,10 +303,10 @@ def userinfo():
     orderlist=list()
     for i in r:
         d=dict()
-        d['id']=i.id
-        d['username']=i.Uusername
-        d['password']=i.Upassword
-        d['per']=i.Uper
+        d['id']=i['id']
+        d['username']=i['Uusername']
+        d['password']=i['Upassword']
+        d['per']=i['Uper']
         orderlist.append(d)
     #return  render_template('userinfo.html',indexs=orderlist)
     return jsonify(orderlist)
@@ -328,7 +329,7 @@ def useradd():
     password=request.form['password']
     per=request.form['per']
     s = sql.Sql()
-    s.add("Userlogin",username,password,per)
+    s.add("Userlogin",0,username,password,per)
     return '添加成功'
 
 @app.route('/roomadd', methods=['GET','POST'])
@@ -339,7 +340,7 @@ def roomadd():
     roomnum=request.form['roomnum']
     typeid=request.form['typeid']
     s = sql.Sql()
-    s.add("Room",roomnum,typeid)
+    s.add("Room",0,roomnum,typeid)
     return '添加成功'
 
 @app.route('/getRoomtype', methods=['POST'])
@@ -350,8 +351,8 @@ def getRoomtype():
     l=list()
     for i in t:
         d=dict()
-        d['id']=i[0]
-        d['name']=i[1]
+        d['id']=i['id']
+        d['name']=i['Rtypename']
         l.append(d)
     return jsonify(l)
 
@@ -363,7 +364,7 @@ def roomtypeadd():
     typename=request.form['typename']
     price=request.form['price']
     s = sql.Sql()
-    s.add("Roomtype",typename,price)
+    s.add("Roomtype",0,typename,price)
     return '添加成功'
 
 # @app.route('/userdel', methods=['POST'])
