@@ -6,6 +6,9 @@ import json
 import sql
 import time
 import os
+import uuid
+from face import main_video
+import cv2
 
 
 # def time_data1(time_sj):  # 传入单个时间比如'2019-8-01'，类型为str
@@ -18,14 +21,17 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yangning'   #设置一个随机24位字符串为加密盐
 app.config.update(TEMPLATE_AUTO_RELOAD=True)
 
+main_video.action()
+main_video.init()
+
 # 装饰器装饰多个视图函数
 def wrapper(func):
     @wraps(func)  # 保存原来函数的所有属性,包括文件名
     def inner(*args, **kwargs):
         # 校验session
         if session.get("user"):
-            ret = func(*args, **kwargs)  # func = home
-            return ret
+            r = func(*args, **kwargs)  # func = home
+            return r
         else:
             return redirect("/login")
     return inner
@@ -195,10 +201,30 @@ def order():
     Gidcard=request.form['Gidcard']
     Gphone=request.form['Gphone']
     username=request.form['username']
+    Gface=request.files["Gface"]
+    if Gface:
+        filepath = "pic/%s.jpg" % uuid.uuid4()
+        Gface.save(filepath)
+
+    # 加载图片
+    im=main_video.face_class.IM()
+    im.filepath=filepath
+    im=main_video.fun.LoadImg(im)
+    ret=main_video.fun.RLSB(im)
+    if ret[0]==-1:
+        print('人脸识别失败:',ret)
+    else:
+        print('人脸识别成功:',ret)
+    ft=main_video.fun.getsingleface(ret[1],0)
+    tz1=main_video.fun.RLTZ(im.data,ft)[1]
+    tzfilepath = 'tz/%s.dat' % uuid.uuid4()
+    main_video.fun.writeFTFile(tz1,tzfilepath)
+
+
     r=s.execute("SELECT * FROM Guest WHERE Gidcard='%s'"%Gidcard)
     print(r)
     if(len(r)==0):
-        s.add('Guest',0,Gname,Gsex,Gidcard,Gphone,'',1,1,1)
+        s.add('Guest',0,Gname,Gsex,Gidcard,Gphone,tzfilepath,1,1,1)
     else:
         Cguestid=r[0]['id']
     r=s.execute("SELECT * FROM Guest WHERE Gidcard='%s'"%Gidcard)

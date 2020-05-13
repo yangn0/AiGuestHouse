@@ -31,7 +31,7 @@
 
 
 						</table>
-						<form class="form-horizontal" action="/order" method="POST" >
+						<form class="form-horizontal" action="/order" method="POST" enctype="multipart/form-data">
 							<div class="form-group">
 								<input type="text" name='Gname' class="form-control" placeholder="客户姓名">
 							</div>
@@ -44,9 +44,9 @@
 							<div class="form-group">
 								<input type="text" name="Gphone" class="form-control" placeholder="电话">
 							</div>
-							<!-- <div class="form-group">
-								人脸信息：<input type="file" name="Gface" class="form-control" placeholder="人脸信息">
-							</div> -->
+							<div class="form-group">
+								<input name="Gface" value="拍照" type="file"  capture="camera" accept="image/*" class="form-control" placeholder="人脸信息">
+							</div>
 							<input type='text' style='display: none;' name='roomid' value="{{roomid}}"></input>
 							<input type='text' style='display: none;' name='roomnum' value="{{roomnum}}"></input>
 							<input type='text' style='display: none;' name='roomtype' value="{{roomtype}}"></input>

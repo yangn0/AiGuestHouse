@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS Guest
 	Gsex VARCHAR(2) NOT NULL,						
 	Gidcard VARCHAR(30) NOT NULL,                    
 	Gphone VARCHAR(20) NOT NULL,                     
-	Gface VARCHAR(20) NOT NULL,                      
+	Gface VARCHAR(255) NOT NULL,                      
 	Gbodybuilding INT NOT NULL,						
 	Gfood INT NOT NULL,								
 	Gvip INT NOT NULL								
