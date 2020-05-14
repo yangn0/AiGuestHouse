@@ -254,8 +254,8 @@ def orderinfo():
     for i in r:
         d=dict()
         d['id']=i['id']
-        d['roomnum']=(s.execute("SELECT * FROM Room WHERE id='%s'"% i.Croomnum) )[0]['Rroomnum']
-        d['name']=(s.execute("SELECT * FROM Guest WHERE id='%s'"% i.Cguestid) )[0]['Gname']
+        d['roomnum']=(s.execute("SELECT * FROM Room WHERE id='%s'"% i['Croomnum']) )[0]['Rroomnum']
+        d['name']=(s.execute("SELECT * FROM Guest WHERE id='%s'"% i['Croomnum']) )[0]['Gname']
         d['startdate']=i['Cstartdate']
         d['enddate']=i['Clastdate']
         orderlist.append(d)
