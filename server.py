@@ -238,6 +238,30 @@ def order():
     s.add('Checkin',0,userid,roomid,Cguestid,startdate,enddate,'')
     return redirect("/roomsearch")
 
+@app.route("/findface",methods=['POST'])
+def findface():
+    tz1=request.files["tz"]
+    if tz1:
+        filepath = "tz1/%s.dat" % uuid.uuid4()
+        tz1.save(filepath)
+    for i in os.walk('tz/'):
+        for u in i[2]:
+            tz1=main_video.fun.ftfromfile(filepath)
+            tz=main_video.fun.ftfromfile(os.path.join('tz/',u))
+            jg= main_video.fun.BD(tz1,tz)
+            if(float(jg[1])>=0.9):
+                s=sql.Sql()
+                r=s.execute("SELECT * FROM Guest WHERE Gface='%s'"% ('tz/'+u))
+                if(len(r)==0):
+                    continue
+                guestid=r[0]['id']
+                r=s.execute("SELECT * FROM checkin WHERE cguestid='%s'"% guestid)
+                if(len(r)==0):
+                    continue
+                print(r)
+                return jsonify(r)
+    return "error"
+
 @app.route('/getusername', methods=['POST'])
 @wrapper
 def getusername():
