@@ -16,30 +16,30 @@ SDKey=b'3D9qMCzCH5UN8cF3gKtAKgt5nJbKsJ4JRqD1qRbJVctg'
 ip=''
 roomnum=''
 
-def insert_sql(name,Phone_number,Department,Project_group,addr):
-    db = pymysql.connect(host='localhost', user='root', password='88888888', port=3306, db='faces')
-    cursor = db.cursor()
-    sql = 'INSERT INTO faces_2 (id, name, Phone_number,Department,Project_group,addr) values(%s,%s,%s,%s,%s,%s)'
-    sq_num='SELECT COUNT(*) FROM faces_2'
-    cursor.execute(sq_num)
-    num = cursor.fetchone()
-    #print(num[0])
-    try:
-        cursor.execute(sql, (str(num[0]+1), name,Phone_number,Department,Project_group,addr+str(num[0]+1)+".dat"))
-        db.commit()
-    except:
-        db.rollback()
-    db.close()
-    return num[0]+1
+# def insert_sql(name,Phone_number,Department,Project_group,addr):
+#     db = pymysql.connect(host='localhost', user='root', password='88888888', port=3306, db='faces')
+#     cursor = db.cursor()
+#     sql = 'INSERT INTO faces_2 (id, name, Phone_number,Department,Project_group,addr) values(%s,%s,%s,%s,%s,%s)'
+#     sq_num='SELECT COUNT(*) FROM faces_2'
+#     cursor.execute(sq_num)
+#     num = cursor.fetchone()
+#     #print(num[0])
+#     try:
+#         cursor.execute(sql, (str(num[0]+1), name,Phone_number,Department,Project_group,addr+str(num[0]+1)+".dat"))
+#         db.commit()
+#     except:
+#         db.rollback()
+#     db.close()
+#     return num[0]+1
 
-def read_sql():
-    db = pymysql.connect(host='localhost', user='root', password='88888888', port=3306, db='faces')
-    cursor = db.cursor()
-    sql='SELECT * FROM faces_2'
-    cursor.execute(sql)
-    while(1):
-        row=cursor.fetchone()
-        yield row
+# def read_sql():
+#     db = pymysql.connect(host='localhost', user='root', password='88888888', port=3306, db='faces')
+#     cursor = db.cursor()
+#     sql='SELECT * FROM faces_2'
+#     cursor.execute(sql)
+#     while(1):
+#         row=cursor.fetchone()
+#         yield row
     
 def action():
     # 激活
@@ -70,7 +70,7 @@ def input_pic():
 def reg_face(im,ret):
     ft=fun.getsingleface(ret[1],0)
     tz1=fun.RLTZ(im,ft)[1]
-    print("人脸特征提取成功。")
+    #print("人脸特征提取成功。")
     print("-----------------------------------------------")
     return tz1
 
@@ -81,7 +81,7 @@ def save_face(tz1):
     Project_group=input("项目组：")
     n=insert_sql(s,Phone_number,Department,Project_group,'tz/')
     fun.writeFTFile(tz1,'tz/%s.dat' % n)
-    print("人脸特征保存成功。")
+    #print("人脸特征保存成功。")
     print("-----------------------------------------------")
 
 def find_face_old(tz1):
@@ -161,33 +161,56 @@ def thread3():
     global frame
     global ret
     global roomnum
-    def on_press(key):
-        if(str(key)=='Key.f9'):
-            print("提取人脸特征，并在人脸库比对……")
+
+    # def on_press(key):
+    #     if(str(key)=='Key.f9'):
+    #         print("提取人脸特征，并在人脸库比对……")
+    #         tz_now=reg_face(frame,ret)
+    #         r=find_face(tz_now)
+    #         if r =='error':
+    #             print("未找到此人脸订单信息。")
+    #         else:
+    #             for i in json.loads(r):
+    #                 if str(i['Croomnum'])==roomnum :
+    #                     Cstartdate=time.mktime(time.strptime(i['Cstartdate'],"%a, %d %b %Y %H:%M:%S %Z")) # 字符串转时间戳
+    #                     Clastdate=time.mktime(time.strptime(i['Clastdate'],"%a, %d %b %Y %H:%M:%S %Z")) # 字符串转时间戳
+    #                     if(Cstartdate>time.time()):
+    #                         print("未到订单开始时间")
+    #                     elif(Clastdate<time.time()):
+    #                         print("本房间时间已结束")
+    #                     else:
+    #                         print("-------开锁-------")
+    #                 else:
+    #                     print("非本房间。")
+            
+    #     # if(str(key)=='Key.f10'):
+    #     #     print("保存人脸特征……")
+    #     #     save_face(reg_face(frame,ret))
+            
+    # with keyboard.Listener(on_press=on_press) as listener:
+    #     listener.join()
+
+    while(1):
+        try:
             tz_now=reg_face(frame,ret)
-            r=find_face(tz_now)
-            if r =='error':
-                print("未找到此人脸订单信息。")
-            else:
-                for i in json.loads(r):
-                    if str(i['Croomnum'])==roomnum :
-                        Cstartdate=time.mktime(time.strptime(i['Cstartdate'],"%a, %d %b %Y %H:%M:%S %Z")) # 字符串转时间戳
-                        Clastdate=time.mktime(time.strptime(i['Clastdate'],"%a, %d %b %Y %H:%M:%S %Z")) # 字符串转时间戳
-                        if(Cstartdate>time.time()):
-                            print("未到订单开始时间")
-                        elif(Clastdate<time.time()):
-                            print("本房间时间已结束")
-                        else:
-                            print("-------开锁-------")
+        except:
+            continue
+        r=find_face(tz_now)
+        if r =='error':
+            print("未找到此人脸订单信息。")
+        else:
+            for i in json.loads(r):
+                if str(i['Croomnum'])==roomnum :
+                    Cstartdate=time.mktime(time.strptime(i['Cstartdate'],"%a, %d %b %Y %H:%M:%S %Z")) # 字符串转时间戳
+                    Clastdate=time.mktime(time.strptime(i['Clastdate'],"%a, %d %b %Y %H:%M:%S %Z")) # 字符串转时间戳
+                    if(Cstartdate>time.time()):
+                        print("未到订单开始时间")
+                    elif(Clastdate<time.time()):
+                        print("本房间时间已结束")
                     else:
-                        print("非本房间。")
-            
-        # if(str(key)=='Key.f10'):
-        #     print("保存人脸特征……")
-        #     save_face(reg_face(frame,ret))
-            
-    with keyboard.Listener(on_press=on_press) as listener:
-        listener.join()
+                        print("-------开锁-------")
+                else:
+                    print("非本房间。")
         
 if __name__ == "__main__":
     action()
